@@ -1,18 +1,4 @@
 services:
-  transmission:
-    image: linuxserver/transmission:latest
-    container_name: transmission
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
-    volumes:
-      - ./downloads:/downloads
-      - ./transmission-config:/config
-    ports:
-      - 9091:9091
-    restart: unless-stopped
-
   telegram-bot:
     build: .
     container_name: telegram-bot
@@ -21,10 +7,9 @@ services:
       - AUTHORIZED_CHAT_ID=${AUTHORIZED_CHAT_ID}
       - BASE_URL=${BASE_URL:-http://192.168.0.25:8080}
       - BASE_DIR=${BASE_DIR:-/downloads}
-      - TRANSMISSION_HOST=transmission
-      - TRANSMISSION_PORT=9091
+      - TRANSMISSION_HOST=${TRANSMISSION_HOST}
+      - TRANSMISSION_PORT=${TRANSMISSION_PORT}
     volumes:
+      #- /mnt/sda1/transmission/downloads:/downloads:ro
       - ./downloads:/downloads:ro
-    depends_on:
-      - transmission
     restart: unless-stopped
