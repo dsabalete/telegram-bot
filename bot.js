@@ -6,11 +6,11 @@ const { exec } = require('child_process');
 const token = process.env.TG_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 const transmission = new Transmission({
-  host: 'localhost',
-  port: 9091
+  host: process.env.TRANSMISSION_HOST || 'localhost',
+  port: parseInt(process.env.TRANSMISSION_PORT) || 9091
 });
 
-const AUTHORIZED_CHAT_ID = 937938391;
+const AUTHORIZED_CHAT_ID = parseInt(process.env.AUTHORIZED_CHAT_ID) || 937938391;
 const notifiedTorrents = {}; // {id: true}
 
 bot.onText(/\/start/, (msg) => {
@@ -176,11 +176,8 @@ function buildHttpLink(baseUrl, fullPath, baseDir) {
 
 
 
-/*
-* Funcion utilitaria para chequear que torrents han acabado
-*/
-const BASE_URL = 'http://192.168.0.25:8080';
-const BASE_DIR = '/mnt/sda1/shared/Pelis';
+const BASE_URL = process.env.BASE_URL || 'http://192.168.0.25:8080';
+const BASE_DIR = process.env.BASE_DIR || '/downloads';
 
 function checkFinishedTorrents() {
   transmission.get((err, result) => {

@@ -13,7 +13,7 @@ A Node.js Telegram bot for managing Transmission torrents on a Raspberry Pi. Pro
 
 ## Prerequisites
 
-- Node.js (CommonJS environment)
+- Node.js (CommonJS environment) OR Docker
 - Transmission daemon running on `localhost:9091`
 - Telegram bot token from [@BotFather](https://t.me/botfather)
 
@@ -40,9 +40,62 @@ export TG_BOT_TOKEN="your_telegram_bot_token_here"
    - Find your chat ID by messaging [@userinfobot](https://t.me/userinfobot)
 
 5. (Optional) Configure HTTP links for downloaded files:
-   - Edit `BASE_URL` in `bot.js` to match your HTTP server
-   - Edit `BASE_DIR` to match your download directory
-   - Uncomment the commented section in `checkFinishedTorrents()` to include file links in notifications
+    - Edit `BASE_URL` in `bot.js` to match your HTTP server
+    - Edit `BASE_DIR` to match your download directory
+    - Uncomment the commented section in `checkFinishedTorrents()` to include file links in notifications
+
+## Docker Deployment
+
+### Using Docker Compose (Recommended)
+
+1. Create environment file:
+```bash
+cp .env.example .env
+```
+
+2. Edit `.env` and configure your bot token and chat ID:
+```env
+TG_BOT_TOKEN=your_telegram_bot_token_here
+AUTHORIZED_CHAT_ID=937938391
+```
+
+3. Start all services:
+```bash
+docker-compose up -d
+```
+
+This will start both the Telegram bot and Transmission daemon with:
+- Transmission accessible on port 9091
+- Downloads stored in `./downloads` directory
+- Transmission configuration in `./transmission-config` directory
+- Bot automatically connects to Transmission container
+
+### Using Docker Only (Without Compose)
+
+If you have Transmission running separately:
+
+1. Build the image:
+```bash
+docker build -t telegram-bot .
+```
+
+2. Run the container:
+```bash
+docker run -d \
+  --name telegram-bot \
+  -e TG_BOT_TOKEN="your_token" \
+  -e AUTHORIZED_CHAT_ID=937938391 \
+  -e TRANSMISSION_HOST=host.docker.internal \
+  -v /path/to/downloads:/downloads:ro \
+  telegram-bot
+```
+
+### Docker Management
+
+- View logs: `docker-compose logs -f telegram-bot`
+- Stop services: `docker-compose down`
+- Restart services: `docker-compose restart`
+- Update bot: `docker-compose up -d --build telegram-bot`
 
 ## Usage
 
@@ -70,27 +123,28 @@ The bot will run in polling mode, automatically checking for completed torrents 
 
 ### Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `TG_BOT_TOKEN` | Yes | Telegram bot authentication token |
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `TG_BOT_TOKEN` | Yes | - | Telegram bot authentication token |
+| `AUTHORIZED_CHAT_ID` | Yes | - | Telegram chat ID allowed to use the bot |
+| `BASE_URL` | No | `http://192.168.0.25:8080` | HTTP server URL for file access |
+| `BASE_DIR` | No | `/downloads` | Download directory path |
+| `TRANSMISSION_HOST` | No | `localhost` | Transmission RPC host |
+| `TRANSMISSION_PORT` | No | `9091` | Transmission RPC port |
 
 ### Code Configuration
 
-Edit `bot.js` to customize:
-
-```javascript
-const AUTHORIZED_CHAT_ID = 937938391; // Your Telegram chat ID
-const BASE_URL = 'http://192.168.0.25:8080'; // HTTP server for file access
-const BASE_DIR = '/mnt/sda1/shared/Pelis'; // Download directory
-```
+The bot now supports configuration via environment variables. Previously, these values were hardcoded in `bot.js`. You can still modify `bot.js` directly, but environment variables are recommended for Docker deployments and better portability.
 
 ### Transmission Configuration
 
 The bot connects to Transmission at:
-- **Host**: `localhost`
-- **Port**: `9091`
+- **Default Host**: `localhost` (configurable via `TRANSMISSION_HOST`)
+- **Default Port**: `9091` (configurable via `TRANSMISSION_PORT`)
 
-Ensure Transmission is running and accessible at this address.
+When using Docker Compose, the bot automatically connects to the Transmission service.
+
+Ensure Transmission is running and accessible at the configured address.
 
 ## Architecture
 
@@ -104,11 +158,15 @@ Ensure Transmission is running and accessible at this address.
 
 ```
 telegram-bot/
-├── bot.js           # Main bot application
-├── package.json     # Project dependencies
-├── AGENTS.md        # Guidelines for AI agents
-├── .gitignore       # Git ignore rules
-└── README.md        # This file
+├── bot.js               # Main bot application
+├── package.json         # Project dependencies
+├── Dockerfile           # Docker image configuration
+├── docker-compose.yml   # Multi-container setup with Transmission
+├── .dockerignore        # Files excluded from Docker build
+├── .env.example         # Environment variable template
+├── AGENTS.md            # Guidelines for AI agents
+├── .gitignore           # Git ignore rules
+└── README.md            # This file
 ```
 
 ## Security
@@ -153,6 +211,14 @@ telegram-bot/
 1. Confirm Transmission daemon is running
 2. Check if Transmission RPC is enabled on port 9091
 3. Verify no firewall rules blocking the connection
+
+### Docker issues
+
+1. Verify environment variables are set in `.env` file
+2. Check logs: `docker-compose logs -f`
+3. Ensure volumes have proper permissions: `ls -la downloads/`
+4. Verify container can connect to Transmission: `docker exec telegram-bot ping transmission`
+5. Rebuild image if dependencies changed: `docker-compose up -d --build`
 
 ## License
 
