@@ -10,6 +10,7 @@ services:
       - TRANSMISSION_HOST=${TRANSMISSION_HOST}
       - TRANSMISSION_PORT=${TRANSMISSION_PORT}
     volumes:
-      #- /mnt/sda1/transmission/downloads:/downloads:ro
-      - ./downloads:/downloads:ro
+      - /mnt/sda1/transmission/downloads:/downloads:ro
+      #- ./downloads:/downloads:ro
+    network_mode: bridge
     restart: unless-stopped
