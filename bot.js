@@ -5,10 +5,19 @@ const { exec } = require('child_process');
 
 const token = process.env.TG_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
-const transmission = new Transmission({
+
+const transmissionConfig = {
   host: process.env.TRANSMISSION_HOST || 'localhost',
   port: parseInt(process.env.TRANSMISSION_PORT) || 9091
-});
+};
+
+// Agregar autenticación si está configurada
+if (process.env.TRANSMISSION_USERNAME && process.env.TRANSMISSION_PASSWORD) {
+  transmissionConfig.username = process.env.TRANSMISSION_USERNAME;
+  transmissionConfig.password = process.env.TRANSMISSION_PASSWORD;
+}
+
+const transmission = new Transmission(transmissionConfig);
 
 const AUTHORIZED_CHAT_ID = parseInt(process.env.AUTHORIZED_CHAT_ID) || 937938391;
 const notifiedTorrents = {}; // {id: true}
@@ -101,8 +110,8 @@ bot.onText(/\/torrents/i, (msg) => {
         const progress = (t.percentDone * 100).toFixed(1);
         const status =
           t.status === 4 ? '⬇ descargando' :
-          t.status === 6 ? '⏸ pausado' :
-          '📦 activo';
+            t.status === 6 ? '⏸ pausado' :
+              '📦 activo';
 
         return `🧲 ${t.id}. ${t.name}\n${status} – ${progress}%`;
       })
@@ -190,15 +199,15 @@ function checkFinishedTorrents() {
       const finished = t.percentDone === 1;
       if (finished && !notifiedTorrents[t.id]) {
 
-/*
-	const links = t.files.map(f => {
-    	  const fullPath = `${t.downloadDir}/${f.name}`;
-      	  return buildHttpLink(BASE_URL, fullPath, BASE_DIR);
-    	}).join('\n');
-*/
+        /*
+          const links = t.files.map(f => {
+                const fullPath = `${t.downloadDir}/${f.name}`;
+                  return buildHttpLink(BASE_URL, fullPath, BASE_DIR);
+              }).join('\n');
+        */
 
-//    	const message = `✅ Torrent terminado:\n${t.name}\nID: ${t.id}\nArchivos:\n${links}`;
-    	const message = `✅ Torrent terminado:\n${t.name}\nID: ${t.id}`;
+        //    	const message = `✅ Torrent terminado:\n${t.name}\nID: ${t.id}\nArchivos:\n${links}`;
+        const message = `✅ Torrent terminado:\n${t.name}\nID: ${t.id}`;
         bot.sendMessage(AUTHORIZED_CHAT_ID, message);
         notifiedTorrents[t.id] = true;
       }

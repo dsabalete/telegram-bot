@@ -9,6 +9,8 @@ services:
       - BASE_DIR=${BASE_DIR:-/downloads}
       - TRANSMISSION_HOST=${TRANSMISSION_HOST}
       - TRANSMISSION_PORT=${TRANSMISSION_PORT}
+      - TRANSMISSION_USERNAME=${TRANSMISSION_USERNAME}
+      - TRANSMISSION_PASSWORD=${TRANSMISSION_PASSWORD}
     volumes:
       - /mnt/sda1/transmission/downloads:/downloads:ro
       #- ./downloads:/downloads:ro
